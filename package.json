@@ -1,0 +1,17 @@
+{
+  "name": "discord-mokoko-app",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Lostark Tool",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.2.1",
+    "discord.js": "^14.6.0",
+    "dotenv": "^16.0.3"
+  }
+}
