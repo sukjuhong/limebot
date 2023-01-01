@@ -1,5 +1,7 @@
 import { Events } from "discord.js";
 
+const voiceChannelCreatorMap = new Map();
+
 export default {
     name: Events.InteractionCreate,
     async execute(interaction) {

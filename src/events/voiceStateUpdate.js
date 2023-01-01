@@ -2,8 +2,6 @@ import { Events, ChannelType } from "discord.js";
 import * as dotenv from "dotenv";
 dotenv.config();
 
-const createdChannels = [];
-
 export default {
     name: Events.VoiceStateUpdate,
     async execute(oldState, newState) {

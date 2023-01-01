@@ -1,5 +1,6 @@
 .env
 .prettierrc
+data.json
+
 node_modules
-dev-commands
 dev
