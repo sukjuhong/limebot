@@ -37,7 +37,7 @@ export default class VoiceStateUpdateHandler implements Handler {
             !oldState.channel.members.size
         ) {
             Logger.info(
-                `Deleted empty voice channel ${oldState.channel.name} created by creating channel.`
+                `Deleted [${oldState.channel.name}] empty voice channel created by creating channel.`
             );
             this.createdChannelsMap.delete(oldState.channelId);
             await oldState.channel.delete();
@@ -45,12 +45,14 @@ export default class VoiceStateUpdateHandler implements Handler {
 
         if (newState.channelId === this.creatingChannel.id) {
             const createdChannel = await newState.guild.channels.create({
-                name: `${newState.member.nickname} 채널`,
+                name: `🔊 ${
+                    oldState.member.nickname || oldState.member.displayName
+                } 채널`,
                 type: ChannelType.GuildVoice,
-                parent: process.env.CREATING_VOICE_CHANNEL_CATEGORY_ID,
+                parent: Config.LIME_PARTY_CREATING_CHAANEL_CATEGOTY_ID,
             });
             Logger.info(
-                `Creating temporary voice channel [${createdChannel.name}]. `
+                `Creating [${createdChannel.name}] temporary voice channel. `
             );
             this.createdChannelsMap.set(createdChannel.id, createdChannel);
             await newState.member.voice.setChannel(createdChannel);
