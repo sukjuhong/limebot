@@ -1,11 +1,13 @@
 {
-  "name": "discord-mokoko-app",
+  "name": "limebot",
   "version": "1.0.0",
   "type": "module",
-  "description": "Lostark Tool",
+  "description": "a Discord bot helping lime-party",
   "main": "app.js",
   "scripts": {
-    "start": "node src/app.js"
+    "build": "tsc --build",
+    "clean": "tsc --build --clean",
+    "start": "node ./dist/app.js"
   },
   "author": "",
   "license": "ISC",
@@ -14,5 +16,8 @@
     "discord.js": "^14.6.0",
     "dotenv": "^16.0.3",
     "winston": "^3.8.2"
+  },
+  "devDependencies": {
+    "typescript": "^4.9.4"
   }
 }
