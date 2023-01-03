@@ -1,4 +1,3 @@
-import Logger from "../utills/Logger";
 import {
     Client,
     ClientOptions,
@@ -7,11 +6,13 @@ import {
     REST,
     GatewayIntentBits,
 } from "discord.js";
+import * as path from "path";
+import * as fs from "fs";
+
+import Logger from "../utills/Logger";
 import Config from "../utills/Config";
 import Command from "../interfaces/Command";
 import Repeater from "../interfaces/Repeater";
-import * as path from "path";
-import * as fs from "fs";
 
 export default class ClientManager {
     static instance = new ClientManager();
@@ -39,18 +40,11 @@ export default class ClientManager {
 
     public async init() {
         Logger.info("Starting Discord bot...");
-        try {
-            await this.login(Config.DISCORD_TOKEN);
-
-            await this.loadCommands();
-            await this.loadHandlers();
-            await this.loadRepeater();
-
-            this.registerCommands();
-        } catch (error) {
-            Logger.error("Failed starting Discord bot.");
-            Logger.error(error);
-        }
+        await this.login(Config.DISCORD_TOKEN);
+        await this.loadCommands();
+        await this.loadHandlers();
+        await this.loadRepeater();
+        await this.registerCommands();
     }
 
     private createClient() {

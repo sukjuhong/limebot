@@ -1,6 +1,6 @@
 .env
 .prettierrc
-data.json
+db.json
 
 node_modules
 dist

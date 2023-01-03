@@ -1,4 +1,4 @@
 import ClientManager from "./structures/ClientManager";
 
-const cm = ClientManager.getInstance();
-cm.init();
+const clientManager = ClientManager.getInstance();
+clientManager.init();

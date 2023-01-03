@@ -7,7 +7,7 @@
     "build": "tsc --build",
     "clean": "rm -rf dist",
     "start": "node ./dist/app.js",
-    "dev": "nodemon src/app.ts"
+    "dev": "nodemon src/app.ts --ignore '*.json'"
   },
   "author": "",
   "license": "ISC",
