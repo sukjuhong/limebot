@@ -1,11 +1,11 @@
 {
     "compilerOptions": {
         "target": "ES6",
-        "module": "esnext",
+        "module": "CommonJS",
         "outDir": "./dist",
         "moduleResolution": "Node",
-        "skipLibCheck": true
+        "types": ["node"],
     },
-    "include": ["./src/**/*"],
-    "exclude": ["node_modules", "dist"]
+    "include": ["./src/**/*.ts"],
+    "exclude": ["node_modules"]
 }

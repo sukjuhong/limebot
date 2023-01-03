@@ -1,36 +1,51 @@
-import Logger from "../utills/Logger.js";
-import { Client, ClientOptions, Collection, Routes, REST } from "discord.js";
-import Config from "../utills/Config.js";
-import Command from "./Command.js";
+import Logger from "../utills/Logger";
+import {
+    Client,
+    ClientOptions,
+    Collection,
+    Routes,
+    REST,
+    GatewayIntentBits,
+} from "discord.js";
+import Config from "../utills/Config";
+import Command from "../interfaces/Command";
+import Repeater from "../interfaces/Repeater";
 import * as path from "path";
 import * as fs from "fs";
-import * as url from "url";
-import Handler from "./Handler.js";
-import axios from "axios";
-
-const __dirname = url.fileURLToPath(import.meta.url);
 
 export default class ClientManager {
     static instance = new ClientManager();
 
+    client: Client;
+    commands: Collection<string, Command>;
+    repeaters: Collection<Repeater, NodeJS.Timer>;
+    options: ClientOptions;
+
     private constructor() {
+        this.options = {
+            intents: [
+                GatewayIntentBits.Guilds,
+                GatewayIntentBits.GuildVoiceStates,
+            ],
+        };
         this.commands = new Collection<string, Command>();
+        this.repeaters = new Collection<Repeater, NodeJS.Timer>();
+        this.createClient();
     }
 
     public static getInstance(): ClientManager {
         return this.instance;
     }
 
-    client: Client;
-    commands: Collection<string, Command>;
-
-    public async init(options: ClientOptions) {
+    public async init() {
         Logger.info("Starting Discord bot...");
         try {
-            this.createClient(options);
             await this.login(Config.DISCORD_TOKEN);
+
             await this.loadCommands();
             await this.loadHandlers();
+            await this.loadRepeater();
+
             this.registerCommands();
         } catch (error) {
             Logger.error("Failed starting Discord bot.");
@@ -38,10 +53,11 @@ export default class ClientManager {
         }
     }
 
-    private createClient(options: ClientOptions) {
+    private createClient() {
         Logger.info("Making Discord bot client...");
+
         try {
-            const client = new Client(options);
+            const client = new Client(this.options);
             this.client = client;
         } catch (error) {
             Logger.error("Failed Making Discord bot client.");
@@ -66,23 +82,24 @@ export default class ClientManager {
     private async loadCommands() {
         Logger.info("Loading commands...");
         let loadedCommandsCount: number = 0;
-        const commandsPath = path.join(__dirname, "../../.", "/commands");
+        const commandsPath = path.join(__dirname, "../commands");
         const commandFiles = fs
             .readdirSync(commandsPath)
-            .filter((file) => file.endsWith(".js") && file !== "Command.js");
+            .filter((file) => file.endsWith(".js") || file.endsWith(".ts"));
 
         for (const file of commandFiles) {
             try {
                 Logger.info(`Loading [${file}] command...`);
                 const filePath = path.join(commandsPath, file);
-                const command: Command = new (await import(filePath)).default();
+                const command = new (await import(filePath)).default();
                 this.commands.set(command.data.name, command);
+                loadedCommandsCount++;
                 Logger.info(
                     `Successfully Loaded [${command.data.name}] command.`
                 );
-                loadedCommandsCount++;
             } catch (error) {
                 Logger.error(`Failed loading [${file}] command.`);
+                Logger.error(error);
             }
         }
 
@@ -93,16 +110,16 @@ export default class ClientManager {
     private async loadHandlers() {
         Logger.info("Loading handlers...");
         let loadedHandlersCount: number = 0;
-        const handlersPath = path.join(__dirname, "../../.", "/handlers");
+        const handlersPath = path.join(__dirname, "../handlers");
         const handlerFiles = fs
             .readdirSync(handlersPath)
-            .filter((file) => file.endsWith(".js") && file !== "Handler.js");
+            .filter((file) => file.endsWith(".js") || file.endsWith(".ts"));
 
         for (const file of handlerFiles) {
             try {
                 Logger.info(`Loading [${file}] handler...`);
                 const filePath = path.join(handlersPath, file);
-                const handler: Handler = new (await import(filePath)).default();
+                const handler = new (await import(filePath)).default();
                 if (handler.once) {
                     this.client.once(handler.name, (...args) =>
                         handler.execute(...args)
@@ -112,13 +129,14 @@ export default class ClientManager {
                         handler.execute(...args)
                     );
                 }
-                Logger.info(`Successfully loaded [${handler.name}] handlers.`);
                 loadedHandlersCount++;
+                Logger.info(`Successfully loaded [${handler.name}] handlers.`);
             } catch (error) {
                 Logger.error(`Failed loading [${file}] handler.`);
                 Logger.error(error);
             }
         }
+
         if (!loadedHandlersCount) Logger.warn("There is no handlers.");
         else
             Logger.info(`Successfully loaded ${loadedHandlersCount} handlers.`);
@@ -154,30 +172,35 @@ export default class ClientManager {
         }
         Logger.info(`Sucessfully registerd commands.`);
     }
+
+    private async loadRepeater() {
+        Logger.info("Loading repeater...");
+        let loadedRepeaterCount: number = 0;
+        const repeaterPath = path.join(__dirname, "../repeaters");
+        const repeaterFiles = fs
+            .readdirSync(repeaterPath)
+            .filter((file) => file.endsWith(".js") || file.endsWith(".ts"));
+
+        for (const file of repeaterFiles) {
+            try {
+                Logger.info(`Loading [${file}] repeater...`);
+                const filePath = path.join(repeaterPath, file);
+                const repeater = new (await import(filePath)).default();
+                const interval = setInterval(
+                    () => repeater.execute(),
+                    repeater.ms
+                );
+                this.repeaters.set(repeater, interval);
+                loadedRepeaterCount++;
+                Logger.info(`Successfully loaded [${repeater.name}] repeater.`);
+            } catch (error) {
+                Logger.error(`Failed Loading [${file}] repeater.`);
+                Logger.error(error);
+            }
+        }
+
+        if (!loadedRepeaterCount) Logger.warn("There is no repeaters.");
+        else
+            Logger.info(`Successfully loaded ${loadedRepeaterCount} handlers.`);
+    }
 }
-
-// private registerClientCommands() {
-//     const rest = new REST({ version: "10" }).setToken(discordToken);
-
-//     try {
-//         logger.info("Registering commands...");
-
-//         if (!this.commands.size) {
-//             logger.warn("There is no commands for registering.");
-//             return;
-//         }
-
-//         const guildsMap = await this.guilds.fetch();
-//         for (const guildId of guildsMap.keys()) {
-//             const data = await rest.put(Routes.applicationGuildCommands(discordClientId, guildId), {
-//                 body: this.commands,
-//             });
-//             logger.info(
-//                 `Successfully registering ${data.length} commands to [${guildsMap.get(guildId).name}] guild.`
-//             );
-//         }
-//     } catch (error) {
-//         logger.error("Failed registering commands.");
-//         logger.error(error);
-//     }
-// }

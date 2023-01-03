@@ -1,4 +1,4 @@
-import Handler from "../structures/Handler.js";
+import Handler from "../interfaces/Handler";
 import {
     VoiceState,
     Events,
@@ -6,20 +6,23 @@ import {
     VoiceBasedChannel,
     ChannelType,
 } from "discord.js";
-import Logger from "../utills/Logger.js";
-import ClientManager from "../structures/ClientManager.js";
-import Config from "../utills/Config.js";
+import Logger from "../utills/Logger";
+import ClientManager from "../structures/ClientManager";
+import Config from "../utills/Config";
 
 export default class VoiceStateUpdateHandler implements Handler {
-    name: string = Events.VoiceStateUpdate;
-    once: boolean = false;
+    name: string;
+    once: boolean;
 
     creatingChannel: VoiceChannel;
     createdChannelsMap: Map<string, VoiceBasedChannel>;
 
     constructor() {
-        this.setCreatingChannel(Config.LIME_PARTY_CREATING_CHANNEL_ID);
+        this.name = Events.VoiceStateUpdate;
+        this.once = false;
         this.createdChannelsMap = new Map<string, VoiceBasedChannel>();
+
+        this.setCreatingChannel(Config.LIME_PARTY_CREATING_CHANNEL_ID);
     }
 
     private async setCreatingChannel(channelId) {
@@ -27,7 +30,7 @@ export default class VoiceStateUpdateHandler implements Handler {
         const creatingChannel = (await cm.client.channels.fetch(
             channelId
         )) as VoiceChannel;
-        this.creatingChannel = creatingChannel;
+        return creatingChannel;
     }
 
     public async execute(oldState: VoiceState, newState: VoiceState) {

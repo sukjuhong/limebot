@@ -1,35 +1,48 @@
-import { Events, Interaction } from "discord.js";
-import Logger from "../utills/Logger.js";
-import ClientManager from "../structures/ClientManager.js";
-import Handler from "../structures/Handler.js";
+import {
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
+    ChatInputCommandInteraction,
+    Events,
+    Interaction,
+} from "discord.js";
+import Logger from "../utills/Logger";
+import ClientManager from "../structures/ClientManager";
+import Handler from "../interfaces/Handler";
 
 export default class InteractionCreateHandler implements Handler {
-    name: string = Events.InteractionCreate;
-    once: boolean = false;
+    name: string;
+    once: boolean;
+
+    constructor() {
+        this.name = Events.InteractionCreate;
+        this.once = false;
+    }
 
     public async execute(interaction: Interaction) {
-        if (!interaction.isChatInputCommand()) return;
-
-        const command = ClientManager.getInstance().commands.get(
-            interaction.commandName
-        );
-
-        if (!command) {
-            Logger.debug(
-                `Cannot find the command ${interaction.commandName} in commands Collection.`
+        if (interaction.isChatInputCommand()) {
+            const command = ClientManager.getInstance().commands.get(
+                interaction.commandName
             );
-            return;
-        }
 
-        try {
-            await command.execute(interaction);
-        } catch (error) {
-            Logger.error("Occurred error while executing command.");
-            Logger.error(error);
-            await interaction.reply({
-                content: "커맨드 실행 도중 오류가 발생했습니다.",
-                ephemeral: true,
-            });
+            if (!command) {
+                Logger.debug(
+                    `Cannot find the command ${interaction.commandName} in commands Collection.`
+                );
+                return;
+            }
+
+            try {
+                await command.execute(interaction);
+            } catch (error) {
+                Logger.error("Occurred error while executing command.");
+                Logger.error(error);
+                await interaction.reply({
+                    content: "커맨드 실행 도중 오류가 발생했습니다.",
+                    ephemeral: true,
+                });
+            }
+        } else if (interaction.isStringSelectMenu()) {
         }
     }
 }
