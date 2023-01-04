@@ -10,7 +10,7 @@ import * as path from "path";
 import * as fs from "fs";
 
 import Logger from "../utills/Logger";
-import Config from "../utills/Config";
+import { config } from "../utills/Config";
 import Command from "../interfaces/Command";
 import Repeater from "../interfaces/Repeater";
 
@@ -40,7 +40,7 @@ export default class ClientManager {
 
     public async init() {
         Logger.info("Starting Discord bot...");
-        await this.login(Config.DISCORD_TOKEN);
+        await this.login(config.DISCORD_TOKEN);
         await this.loadCommands();
         await this.loadHandlers();
         await this.loadRepeater();
@@ -142,7 +142,7 @@ export default class ClientManager {
             return;
         }
 
-        const rest = new REST({ version: "10" }).setToken(Config.DISCORD_TOKEN);
+        const rest = new REST({ version: "10" }).setToken(config.DISCORD_TOKEN);
         const body = [];
         this.commands.each((command) => {
             body.push(command.data.toJSON());
@@ -153,8 +153,8 @@ export default class ClientManager {
 
             await rest.put(
                 Routes.applicationGuildCommands(
-                    Config.DISCORD_CLIENT_ID,
-                    Config.LIME_PARTY_GUILD_ID
+                    config.DISCORD_CLIENT_ID,
+                    config.LIME_PARTY_GUILD_ID
                 ),
                 {
                     body,

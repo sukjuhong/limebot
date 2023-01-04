@@ -4,15 +4,14 @@ import { EmbedBuilder, TextChannel } from "discord.js";
 
 import Repeater from "../interfaces/Repeater";
 import ClientManager from "../structures/ClientManager";
-import Config from "../utills/Config";
+import { config } from "../utills/Config";
 import Logger from "../utills/Logger";
-import Repository, { JsonType } from "../utills/Repository";
+import Repository, { keys } from "../utills/Repository";
 
 const clientManager = ClientManager.getInstance();
 const repository = Repository.getInstance();
 
 const LOASTARK_BASE_URL = "https://lostark.game.onstove.com";
-const LOASTARK_SENT_NOTICES_KEY = "lostark_sent_notice";
 
 interface Notice {
     title: string;
@@ -29,11 +28,11 @@ export default class LostarkNoticeRepeater implements Repeater {
     sentNotices: Array<string>;
 
     constructor() {
-        this.name = "Lostark Notice Repeater";
+        this.name = "Lostark Notice";
         this.description = "로스트아크 공지를 확인하는 리피터";
         this.ms = 1000 * 60;
         this.sentNotices =
-            (repository.read(LOASTARK_SENT_NOTICES_KEY) as Array<string>) ??
+            (repository.read(keys.LOSTARK_SENT_NOTICES) as Array<string>) ??
             new Array<string>();
     }
 
@@ -69,7 +68,7 @@ export default class LostarkNoticeRepeater implements Repeater {
                 if (this.sentNotices.includes(notice.title)) continue;
                 if (this.sentNotices.length > 30) this.sentNotices.shift();
                 this.sentNotices.push(notice.title);
-                repository.write(LOASTARK_SENT_NOTICES_KEY, this.sentNotices);
+                repository.write(keys.LOSTARK_SENT_NOTICES, this.sentNotices);
 
                 Logger.info(`GET: ${url} using axios in [${this.name}].`);
                 const sub_res = await axios.get(notice.url);
@@ -117,6 +116,8 @@ export default class LostarkNoticeRepeater implements Repeater {
                     )
                     .setFooter({ text: "로스트아크 소식" });
 
+                console.log(notice.article);
+                console.log(!notice.article);
                 if (notice.article)
                     embed.addFields([
                         {
@@ -129,7 +130,7 @@ export default class LostarkNoticeRepeater implements Repeater {
 
                 const noticeChannel =
                     (await clientManager.client.channels.fetch(
-                        Config.LIME_PARTY_NOTICE_CHANNEL
+                        config.LIME_PARTY_NOTICE_CHANNEL
                     )) as TextChannel;
                 await noticeChannel.send({ embeds: [embed] });
             } catch (error) {
