@@ -94,7 +94,7 @@ export default class LostarkNoticeRepeater implements Repeater {
                 notices.push(notice);
             }
         } catch (error) {
-            Logger.error(`Failed parsing data in [${this.name}] repeater.`);
+            Logger.error(`Failed to parse data in [${this.name}] repeater.`);
             Logger.error(error);
         }
 
@@ -116,8 +116,6 @@ export default class LostarkNoticeRepeater implements Repeater {
                     )
                     .setFooter({ text: "로스트아크 소식" });
 
-                console.log(notice.article);
-                console.log(!notice.article);
                 if (notice.article)
                     embed.addFields([
                         {

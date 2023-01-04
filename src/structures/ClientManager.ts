@@ -54,7 +54,7 @@ export default class ClientManager {
             const client = new Client(this.options);
             this.client = client;
         } catch (error) {
-            Logger.error("Failed Making Discord bot client.");
+            Logger.error("Failed to make Discord bot client.");
             Logger.error(error);
         }
         Logger.info("Successfully Making Discord bot client.");
@@ -67,10 +67,10 @@ export default class ClientManager {
                 Logger.warn("Your Discord token is empty.");
             await this.client.login(discordToken);
         } catch (error) {
-            Logger.error("Failed logged in Discord bot client.");
+            Logger.error("Failed to login Discord bot client.");
             Logger.error(error);
         }
-        Logger.info("Successfully logged in Discord bot client.");
+        Logger.info("Successfully to login Discord bot client.");
     }
 
     private async loadCommands() {
@@ -92,7 +92,7 @@ export default class ClientManager {
                     `Successfully Loaded [${command.data.name}] command.`
                 );
             } catch (error) {
-                Logger.error(`Failed loading [${file}] command.`);
+                Logger.error(`Failed to load [${file}] command.`);
                 Logger.error(error);
             }
         }
@@ -126,7 +126,7 @@ export default class ClientManager {
                 loadedHandlersCount++;
                 Logger.info(`Successfully loaded [${handler.name}] handlers.`);
             } catch (error) {
-                Logger.error(`Failed loading [${file}] handler.`);
+                Logger.error(`Failed to load [${file}] handler.`);
                 Logger.error(error);
             }
         }
@@ -161,7 +161,7 @@ export default class ClientManager {
                 }
             );
         } catch (error) {
-            Logger.error("Failed registering commands.");
+            Logger.error("Failed to register commands.");
             Logger.error(error);
         }
         Logger.info(`Sucessfully registerd commands.`);
@@ -188,7 +188,7 @@ export default class ClientManager {
                 loadedRepeaterCount++;
                 Logger.info(`Successfully loaded [${repeater.name}] repeater.`);
             } catch (error) {
-                Logger.error(`Failed Loading [${file}] repeater.`);
+                Logger.error(`Failed to load [${file}] repeater.`);
                 Logger.error(error);
             }
         }
