@@ -22,9 +22,7 @@ export default class InteractionCreateHandler implements Handler {
 
     public async execute(interaction: Interaction) {
         if (interaction.isChatInputCommand()) {
-            const command = ClientManager.getInstance().commands.get(
-                interaction.commandName
-            );
+            const command = ClientManager.commands.get(interaction.commandName);
 
             if (!command) {
                 Logger.debug(
