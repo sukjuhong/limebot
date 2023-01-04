@@ -9,13 +9,21 @@ export type JsonType =
     | { [x: string]: JsonType }
     | Array<JsonType>;
 
+export const keys = {
+    LOSTARK_SENT_NOTICES: "lostark_send_notices",
+};
+
 export default class Repository {
     static instance: Repository = new Repository();
 
     dbPath: string;
+    defalutData: JsonType;
 
     private constructor() {
         this.dbPath = path.join(__dirname, "../../db.json");
+        this.defalutData = {
+            lostark_sent_notices: [],
+        };
     }
 
     public static getInstance() {
@@ -33,7 +41,7 @@ export default class Repository {
                 "There is no database json file. Automatically Create database json file to execute properly."
             );
             fs.writeFileSync(this.dbPath, JSON.stringify({}));
-            return {};
+            return this.defalutData;
         }
 
         return data[key];

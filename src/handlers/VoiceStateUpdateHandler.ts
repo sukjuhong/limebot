@@ -9,7 +9,7 @@ import {
 import Handler from "../interfaces/Handler";
 import Logger from "../utills/Logger";
 import ClientManager from "../structures/ClientManager";
-import Config from "../utills/Config";
+import { config } from "../utills/Config";
 
 const clientManager = ClientManager.getInstance();
 
@@ -25,7 +25,7 @@ export default class VoiceStateUpdateHandler implements Handler {
         this.once = false;
         this.createdChannelsMap = new Map<string, VoiceBasedChannel>();
 
-        this.setCreatingChannel(Config.LIME_PARTY_CREATING_CHANNEL_ID);
+        this.setCreatingChannel(config.LIME_PARTY_CREATING_CHANNEL_ID);
     }
 
     private async setCreatingChannel(channelId) {
@@ -54,7 +54,7 @@ export default class VoiceStateUpdateHandler implements Handler {
                     oldState.member.nickname || oldState.member.displayName
                 } 채널`,
                 type: ChannelType.GuildVoice,
-                parent: Config.LIME_PARTY_CREATING_CHAANEL_CATEGOTY_ID,
+                parent: config.LIME_PARTY_CREATING_CHAANEL_CATEGOTY_ID,
             });
             Logger.info(
                 `Creating [${createdChannel.name}] temporary voice channel. `
