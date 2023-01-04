@@ -1,6 +1,7 @@
 import * as path from "path";
 import * as fs from "fs";
 import Logger from "./Logger";
+import { constants } from "fs/promises";
 
 export type JsonType =
     | string
@@ -10,7 +11,7 @@ export type JsonType =
     | Array<JsonType>;
 
 export const keys = {
-    LOSTARK_SENT_NOTICES: "lostark_send_notices",
+    LOSTARK_SENT_NOTICES: "lostark_sent_notices",
 };
 
 export default class Repository {
@@ -24,6 +25,12 @@ export default class Repository {
         this.defalutData = {
             lostark_sent_notices: [],
         };
+
+        fs.stat(this.dbPath, (err, stat) => {
+            if (err) {
+                fs.writeFileSync(this.dbPath, JSON.stringify(this.defalutData));
+            }
+        });
     }
 
     public static getInstance() {
@@ -37,22 +44,24 @@ export default class Repository {
             const jsonData = fs.readFileSync(this.dbPath, "utf8");
             data = JSON.parse(jsonData);
         } catch (error) {
-            Logger.warn(
-                "There is no database json file. Automatically Create database json file to execute properly."
-            );
-            fs.writeFileSync(this.dbPath, JSON.stringify({}));
-            return this.defalutData;
+            Logger.error("Failed to read database json file.");
+            Logger.error(error);
         }
-
         return data[key];
     }
 
     public write(key: string, newData: JsonType) {
-        const jsonData = fs.readFileSync(this.dbPath, "utf8");
-        const data = JSON.parse(jsonData);
-        data[key] = newData;
+        Logger.info("Writing database json file...");
+        try {
+            const jsonData = fs.readFileSync(this.dbPath, "utf8");
+            const data = JSON.parse(jsonData);
+            data[key] = newData;
 
-        const newJsonData = JSON.stringify(data);
-        fs.writeFileSync(this.dbPath, newJsonData);
+            const newJsonData = JSON.stringify(data);
+            fs.writeFileSync(this.dbPath, newJsonData);
+        } catch (error) {
+            Logger.error("Failed to write database json file.");
+            Logger.error(error);
+        }
     }
 }
