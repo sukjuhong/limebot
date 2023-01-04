@@ -72,24 +72,37 @@ export default class LostarkNoticeRepeater implements Repeater {
                 );
                 const sub_res = await axios.get(notice.url);
                 const sub_$ = cheerio.load(sub_res.data);
-                const articleElements = sub_$(".fr-view").children().toArray();
+                const articleElements = sub_$(".fr-view *");
                 notice.imgUrl =
                     sub_$(".fr-view .editor__pc-only img")?.attr("src") ?? "";
                 notice.imgUrl = notice.imgUrl ? "http:" + notice.imgUrl : "";
 
                 for (const articleElement of articleElements) {
-                    if (articleElement.tagName === "hr") break;
-                    if (notice.article.length > 100) {
-                        notice.article += "...";
-                        break;
+                    let articleDatum = "";
+                    for (const articleChildElement of articleElement.childNodes) {
+                        if (articleChildElement.type === "text") {
+                            const parent =
+                                articleChildElement.parent as cheerio.Element;
+                            if (
+                                parent.name === "li" &&
+                                (parent.parent?.parent as cheerio.Element)
+                                    .name === "li"
+                            ) {
+                                articleDatum += "\t\t* ";
+                            } else if (parent.name === "li") {
+                                articleDatum += "\t* ";
+                            }
+                            articleDatum += articleChildElement.data.trim();
+                        }
                     }
 
-                    const articleDatum = sub_$(articleElement).text().trim();
-
-                    if (!articleDatum) continue;
-
-                    notice.article += articleDatum + "\n";
+                    if (
+                        articleDatum &&
+                        notice.article.length + articleDatum.length < 500
+                    )
+                        notice.article += articleDatum + "\n";
                 }
+
                 notices.push(notice);
             }
         } catch (error) {
@@ -115,8 +128,6 @@ export default class LostarkNoticeRepeater implements Repeater {
                     )
                     .setFooter({ text: "로스트아크 소식" });
 
-                if (notice.article) console.log(notice.article);
-                console.log(!notice.article);
                 embed.addFields([
                     {
                         name: "내용",

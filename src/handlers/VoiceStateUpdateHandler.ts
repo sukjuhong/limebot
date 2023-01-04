@@ -22,21 +22,14 @@ export default class VoiceStateUpdateHandler implements Handler {
         this.name = Events.VoiceStateUpdate;
         this.once = false;
         this.createdChannelsMap = new Map<string, VoiceBasedChannel>();
-
-        this.creatingChannel = this.findCreatingChannel(
-            config.LIME_PARTY_CREATING_CHANNEL_ID
-        );
-    }
-
-    private findCreatingChannel(channelId) {
-        let ret: VoiceChannel;
-        ClientManager.client.channels.fetch(channelId).then((channel) => {
-            ret = channel as VoiceChannel;
-        });
-        return ret;
     }
 
     public async execute(oldState: VoiceState, newState: VoiceState) {
+        if (!this.creatingChannel)
+            this.creatingChannel = (await ClientManager.client.channels.fetch(
+                config.LIME_PARTY_CREATING_CHANNEL_ID
+            )) as VoiceChannel;
+
         if (
             oldState.channelId !== this.creatingChannel.id &&
             this.createdChannelsMap.has(oldState.channelId) &&
