@@ -5,6 +5,7 @@ import {
     Routes,
     REST,
     GatewayIntentBits,
+    VoiceChannel,
 } from "discord.js";
 import * as path from "path";
 import * as fs from "fs";
@@ -14,15 +15,13 @@ import { config } from "../utills/Config";
 import Command from "../interfaces/Command";
 import Repeater from "../interfaces/Repeater";
 
-export default class ClientManager {
-    static instance = new ClientManager();
-
+class ClientManager {
     client: Client;
     commands: Collection<string, Command>;
     repeaters: Collection<Repeater, NodeJS.Timer>;
     options: ClientOptions;
 
-    private constructor() {
+    constructor() {
         this.options = {
             intents: [
                 GatewayIntentBits.Guilds,
@@ -31,33 +30,29 @@ export default class ClientManager {
         };
         this.commands = new Collection<string, Command>();
         this.repeaters = new Collection<Repeater, NodeJS.Timer>();
-        this.createClient();
-    }
-
-    public static getInstance(): ClientManager {
-        return this.instance;
+        this.client = this.createClient();
     }
 
     public async init() {
-        Logger.info("Starting Discord bot...");
         await this.login(config.DISCORD_TOKEN);
+
         await this.loadCommands();
         await this.loadHandlers();
         await this.loadRepeater();
         await this.registerCommands();
     }
 
-    private createClient() {
+    private createClient(): Client {
         Logger.info("Making Discord bot client...");
-
+        let ret: Client<boolean>;
         try {
-            const client = new Client(this.options);
-            this.client = client;
+            ret = new Client(this.options);
         } catch (error) {
             Logger.error("Failed to make Discord bot client.");
             Logger.error(error);
         }
         Logger.info("Successfully Making Discord bot client.");
+        return ret;
     }
 
     private async login(discordToken) {
@@ -138,7 +133,7 @@ export default class ClientManager {
 
     private async registerCommands() {
         if (!this.commands.size) {
-            Logger.warn("There is no commands for registering");
+            Logger.warn("There is no commands for registering.");
             return;
         }
 
@@ -198,3 +193,5 @@ export default class ClientManager {
             Logger.info(`Successfully loaded ${loadedRepeaterCount} handlers.`);
     }
 }
+
+export default new ClientManager();

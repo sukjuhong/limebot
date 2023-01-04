@@ -1,7 +1,6 @@
 import * as path from "path";
 import * as fs from "fs";
 import Logger from "./Logger";
-import { constants } from "fs/promises";
 
 export type JsonType =
     | string
@@ -14,27 +13,24 @@ export const keys = {
     LOSTARK_SENT_NOTICES: "lostark_sent_notices",
 };
 
-export default class Repository {
-    static instance: Repository = new Repository();
-
+class Repository {
     dbPath: string;
     defalutData: JsonType;
 
-    private constructor() {
+    constructor() {
         this.dbPath = path.join(__dirname, "../../db.json");
         this.defalutData = {
             lostark_sent_notices: [],
         };
 
-        fs.stat(this.dbPath, (err, stat) => {
-            if (err) {
-                fs.writeFileSync(this.dbPath, JSON.stringify(this.defalutData));
-            }
-        });
-    }
-
-    public static getInstance() {
-        return this.instance;
+        try {
+            fs.accessSync(this.dbPath, fs.constants.F_OK);
+        } catch (error) {
+            Logger.warn(
+                "There is no database json file. Automatically made a data.json."
+            );
+            fs.writeFileSync(this.dbPath, JSON.stringify(this.defalutData));
+        }
     }
 
     public read(key: string): JsonType {
@@ -65,3 +61,5 @@ export default class Repository {
         }
     }
 }
+
+export default new Repository();

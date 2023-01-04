@@ -11,8 +11,6 @@ import Logger from "../utills/Logger";
 import ClientManager from "../structures/ClientManager";
 import { config } from "../utills/Config";
 
-const clientManager = ClientManager.getInstance();
-
 export default class VoiceStateUpdateHandler implements Handler {
     name: string;
     once: boolean;
@@ -25,14 +23,17 @@ export default class VoiceStateUpdateHandler implements Handler {
         this.once = false;
         this.createdChannelsMap = new Map<string, VoiceBasedChannel>();
 
-        this.setCreatingChannel(config.LIME_PARTY_CREATING_CHANNEL_ID);
+        this.creatingChannel = this.findCreatingChannel(
+            config.LIME_PARTY_CREATING_CHANNEL_ID
+        );
     }
 
-    private async setCreatingChannel(channelId) {
-        const creatingChannel = (await clientManager.client.channels.fetch(
-            channelId
-        )) as VoiceChannel;
-        return creatingChannel;
+    private findCreatingChannel(channelId) {
+        let ret: VoiceChannel;
+        ClientManager.client.channels.fetch(channelId).then((channel) => {
+            ret = channel as VoiceChannel;
+        });
+        return ret;
     }
 
     public async execute(oldState: VoiceState, newState: VoiceState) {

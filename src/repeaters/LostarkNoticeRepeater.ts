@@ -8,9 +8,6 @@ import { config } from "../utills/Config";
 import Logger from "../utills/Logger";
 import Repository, { keys } from "../utills/Repository";
 
-const clientManager = ClientManager.getInstance();
-const repository = Repository.getInstance();
-
 const LOASTARK_BASE_URL = "https://lostark.game.onstove.com";
 
 interface Notice {
@@ -32,7 +29,7 @@ export default class LostarkNoticeRepeater implements Repeater {
         this.description = "로스트아크 공지를 확인하는 리피터";
         this.ms = 1000 * 60;
         this.sentNotices =
-            (repository.read(keys.LOSTARK_SENT_NOTICES) as Array<string>) ??
+            (Repository.read(keys.LOSTARK_SENT_NOTICES) as Array<string>) ??
             new Array<string>();
     }
 
@@ -68,9 +65,11 @@ export default class LostarkNoticeRepeater implements Repeater {
                 if (this.sentNotices.includes(notice.title)) continue;
                 if (this.sentNotices.length > 30) this.sentNotices.shift();
                 this.sentNotices.push(notice.title);
-                repository.write(keys.LOSTARK_SENT_NOTICES, this.sentNotices);
+                Repository.write(keys.LOSTARK_SENT_NOTICES, this.sentNotices);
 
-                Logger.info(`GET: ${url} using axios in [${this.name}].`);
+                Logger.info(
+                    `GET: ${notice.url} using axios in [${this.name}].`
+                );
                 const sub_res = await axios.get(notice.url);
                 const sub_$ = cheerio.load(sub_res.data);
                 const articleElements = sub_$(".fr-view").children().toArray();
@@ -116,18 +115,19 @@ export default class LostarkNoticeRepeater implements Repeater {
                     )
                     .setFooter({ text: "로스트아크 소식" });
 
-                if (notice.article)
-                    embed.addFields([
-                        {
-                            name: "내용",
-                            value: `\`\`\`${notice.article}\`\`\``,
-                        },
-                    ]);
+                if (notice.article) console.log(notice.article);
+                console.log(!notice.article);
+                embed.addFields([
+                    {
+                        name: "내용",
+                        value: `\`\`\`${notice.article}\`\`\``,
+                    },
+                ]);
 
                 if (notice.imgUrl) embed.setImage(notice.imgUrl);
 
                 const noticeChannel =
-                    (await clientManager.client.channels.fetch(
+                    (await ClientManager.client.channels.fetch(
                         config.LIME_PARTY_NOTICE_CHANNEL
                     )) as TextChannel;
                 await noticeChannel.send({ embeds: [embed] });
