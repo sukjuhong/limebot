@@ -8,7 +8,7 @@ const logFormat = format.printf(
     }
 );
 
-const Logger = createLogger({
+const logger = createLogger({
     format: format.combine(
         format.colorize(),
         format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
@@ -18,4 +18,4 @@ const Logger = createLogger({
     transports: [new transports.Console()],
 });
 
-export default Logger;
+export default logger;

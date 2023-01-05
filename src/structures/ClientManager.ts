@@ -15,13 +15,14 @@ import { config } from "../utills/Config";
 import Command from "../interfaces/Command";
 import Repeater from "../interfaces/Repeater";
 
-class ClientManager {
+export default class ClientManager {
     client: Client;
     commands: Collection<string, Command>;
     repeaters: Collection<Repeater, NodeJS.Timer>;
     options: ClientOptions;
+    static instance = new ClientManager();
 
-    constructor() {
+    private constructor() {
         this.options = {
             intents: [
                 GatewayIntentBits.Guilds,
@@ -31,6 +32,10 @@ class ClientManager {
         this.commands = new Collection<string, Command>();
         this.repeaters = new Collection<Repeater, NodeJS.Timer>();
         this.client = this.createClient();
+    }
+
+    public static getInstance() {
+        return this.instance;
     }
 
     public async init() {
@@ -193,5 +198,3 @@ class ClientManager {
             Logger.info(`Successfully loaded ${loadedRepeaterCount} handlers.`);
     }
 }
-
-export default new ClientManager();
