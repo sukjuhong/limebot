@@ -15,22 +15,26 @@ import { config } from "../utills/Config";
 import Command from "../interfaces/Command";
 import Repeater from "../interfaces/Repeater";
 
-class ClientManager {
+export default class ClientManager {
     client: Client;
-    commands: Collection<string, Command>;
-    repeaters: Collection<Repeater, NodeJS.Timer>;
+    commands: Map<string, Command>;
+    repeaters: Map<string, Repeater>;
     options: ClientOptions;
+    static instance = new ClientManager();
 
-    constructor() {
-        this.options = {
-            intents: [
-                GatewayIntentBits.Guilds,
-                GatewayIntentBits.GuildVoiceStates,
-            ],
-        };
+    private constructor() {
+        this.options = { intents: [] };
         this.commands = new Collection<string, Command>();
-        this.repeaters = new Collection<Repeater, NodeJS.Timer>();
+        this.repeaters = new Map<string, Repeater>();
         this.client = this.createClient();
+    }
+
+    public static getInstance() {
+        return this.instance;
+    }
+
+    public setOptions(options: ClientOptions) {
+        this.options = options;
     }
 
     public async init() {
@@ -139,7 +143,7 @@ class ClientManager {
 
         const rest = new REST({ version: "10" }).setToken(config.DISCORD_TOKEN);
         const body = [];
-        this.commands.each((command) => {
+        this.commands.forEach((command) => {
             body.push(command.data.toJSON());
         });
 
@@ -165,7 +169,7 @@ class ClientManager {
     private async loadRepeater() {
         Logger.info("Loading repeater...");
         let loadedRepeaterCount: number = 0;
-        const repeaterPath = path.join(__dirname, "../repeaters");
+        const repeaterPath = path.join(__dirname, "../commands/repeaters");
         const repeaterFiles = fs
             .readdirSync(repeaterPath)
             .filter((file) => file.endsWith(".js") || file.endsWith(".ts"));
@@ -175,11 +179,7 @@ class ClientManager {
                 Logger.info(`Loading [${file}] repeater...`);
                 const filePath = path.join(repeaterPath, file);
                 const repeater = new (await import(filePath)).default();
-                const interval = setInterval(
-                    () => repeater.execute(),
-                    repeater.ms
-                );
-                this.repeaters.set(repeater, interval);
+                this.repeaters.set(repeater.name, repeater);
                 loadedRepeaterCount++;
                 Logger.info(`Successfully loaded [${repeater.name}] repeater.`);
             } catch (error) {
@@ -193,5 +193,3 @@ class ClientManager {
             Logger.info(`Successfully loaded ${loadedRepeaterCount} handlers.`);
     }
 }
-
-export default new ClientManager();

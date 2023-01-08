@@ -2,11 +2,11 @@ import axios from "axios";
 import * as cheerio from "cheerio";
 import { EmbedBuilder, TextChannel } from "discord.js";
 
-import Repeater from "../interfaces/Repeater";
-import ClientManager from "../structures/ClientManager";
-import { config } from "../utills/Config";
-import Logger from "../utills/Logger";
-import Repository, { keys } from "../utills/Repository";
+import Repeater from "../../interfaces/Repeater";
+import ClientManager from "../../structures/ClientManager";
+import { config } from "../../utills/Config";
+import Logger from "../../utills/Logger";
+import Repository, { keys } from "../../utills/Repository";
 
 const LOASTARK_BASE_URL = "https://lostark.game.onstove.com";
 
@@ -18,18 +18,25 @@ interface Notice {
     imgUrl: string;
 }
 
+const clientManager = ClientManager.getInstance();
+const repository = Repository.getInstance();
+
 export default class LostarkNoticeRepeater implements Repeater {
     name: string;
     description: string;
     ms: number;
+    on: boolean;
+    timer: NodeJS.Timer;
     sentNotices: Array<string>;
 
     constructor() {
         this.name = "Lostark Notice";
         this.description = "로스트아크 공지를 확인하는 리피터";
         this.ms = 1000 * 60;
+        this.on = false;
+        this.timer = null;
         this.sentNotices =
-            (Repository.read(keys.LOSTARK_SENT_NOTICES) as Array<string>) ??
+            (repository.read(keys.LOSTARK_SENT_NOTICES) as Array<string>) ??
             new Array<string>();
     }
 
@@ -65,7 +72,7 @@ export default class LostarkNoticeRepeater implements Repeater {
                 if (this.sentNotices.includes(notice.title)) continue;
                 if (this.sentNotices.length > 30) this.sentNotices.shift();
                 this.sentNotices.push(notice.title);
-                Repository.write(keys.LOSTARK_SENT_NOTICES, this.sentNotices);
+                repository.write(keys.LOSTARK_SENT_NOTICES, this.sentNotices);
 
                 Logger.info(
                     `GET: ${notice.url} using axios in [${this.name}].`
@@ -138,7 +145,7 @@ export default class LostarkNoticeRepeater implements Repeater {
                 if (notice.imgUrl) embed.setImage(notice.imgUrl);
 
                 const noticeChannel =
-                    (await ClientManager.client.channels.fetch(
+                    (await clientManager.client.channels.fetch(
                         config.LIME_PARTY_NOTICE_CHANNEL
                     )) as TextChannel;
                 await noticeChannel.send({ embeds: [embed] });
