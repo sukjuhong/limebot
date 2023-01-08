@@ -13,11 +13,12 @@ export const keys = {
     LOSTARK_SENT_NOTICES: "lostark_sent_notices",
 };
 
-class Repository {
+export default class Repository {
     dbPath: string;
     defalutData: JsonType;
+    static instance = new Repository();
 
-    constructor() {
+    private constructor() {
         this.dbPath = path.join(__dirname, "../../db.json");
         this.defalutData = {
             lostark_sent_notices: [],
@@ -31,6 +32,10 @@ class Repository {
             );
             fs.writeFileSync(this.dbPath, JSON.stringify(this.defalutData));
         }
+    }
+
+    public static getInstance() {
+        return this.instance;
     }
 
     public read(key: string): JsonType {
@@ -61,5 +66,3 @@ class Repository {
         }
     }
 }
-
-export default new Repository();

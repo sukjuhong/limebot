@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc --build",
     "clean": "rm -rf dist",
-    "start": "node ./dist/app.js",
+    "start": "pm2 start node ./dist/app.js --name limebot NODE_ENV=production",
     "dev": "nodemon src/app.ts --ignore '*.json'"
   },
   "author": "",
@@ -18,7 +18,8 @@
     "discord.js": "^14.6.0",
     "dotenv": "^16.0.3",
     "typescript": "^4.9.4",
-    "winston": "^3.8.2"
+    "winston": "^3.8.2",
+    "winston-daily-rotate-file": "^4.7.1"
   },
   "devDependencies": {
     "@types/node": "^18.11.18",

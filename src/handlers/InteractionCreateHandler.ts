@@ -8,8 +8,10 @@ import {
 } from "discord.js";
 
 import Logger from "../utills/Logger";
-import ClientManager from "../structures/ClientManager";
 import Handler from "../interfaces/Handler";
+import ClientManager from "../structures/ClientManager";
+
+const clientManager = ClientManager.getInstance();
 
 export default class InteractionCreateHandler implements Handler {
     name: string;
@@ -22,7 +24,7 @@ export default class InteractionCreateHandler implements Handler {
 
     public async execute(interaction: Interaction) {
         if (interaction.isChatInputCommand()) {
-            const command = ClientManager.commands.get(interaction.commandName);
+            const command = clientManager.commands.get(interaction.commandName);
 
             if (!command) {
                 Logger.debug(
@@ -38,9 +40,9 @@ export default class InteractionCreateHandler implements Handler {
                 await command.execute(interaction);
             } catch (error) {
                 Logger.error(
-                    `Occurred error while executing [${interaction.commandName}] command.`
+                    `Occurred error while executing [${interaction.commandName}] command.`,
+                    error
                 );
-                Logger.error(error);
                 await interaction.reply({
                     content: "커맨드 실행 도중 오류가 발생했습니다.",
                     ephemeral: true,

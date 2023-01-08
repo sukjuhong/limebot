@@ -2,11 +2,11 @@ import axios from "axios";
 import * as cheerio from "cheerio";
 import { EmbedBuilder, TextChannel } from "discord.js";
 
-import Repeater from "../interfaces/Repeater";
-import ClientManager from "../structures/ClientManager";
-import { config } from "../utills/Config";
-import Logger from "../utills/Logger";
-import Repository, { keys } from "../utills/Repository";
+import Repeater from "../../interfaces/Repeater";
+import ClientManager from "../../structures/ClientManager";
+import { config } from "../../utills/Config";
+import Logger from "../../utills/Logger";
+import Repository, { keys } from "../../utills/Repository";
 
 const LOASTARK_BASE_URL = "https://lostark.game.onstove.com";
 
@@ -18,18 +18,25 @@ interface Notice {
     imgUrl: string;
 }
 
+const clientManager = ClientManager.getInstance();
+const repository = Repository.getInstance();
+
 export default class LostarkNoticeRepeater implements Repeater {
     name: string;
     description: string;
     ms: number;
+    on: boolean;
+    timer: NodeJS.Timer;
     sentNotices: Array<string>;
 
     constructor() {
         this.name = "Lostark Notice";
         this.description = "로스트아크 공지를 확인하는 리피터";
         this.ms = 1000 * 60;
+        this.on = false;
+        this.timer = null;
         this.sentNotices =
-            (Repository.read(keys.LOSTARK_SENT_NOTICES) as Array<string>) ??
+            (repository.read(keys.LOSTARK_SENT_NOTICES) as Array<string>) ??
             new Array<string>();
     }
 
@@ -38,7 +45,7 @@ export default class LostarkNoticeRepeater implements Repeater {
         const notices: Array<Notice> = [];
 
         try {
-            Logger.info(`GET: ${url} using axios in [${this.name}] repeater.`);
+            Logger.info(`GET: ${url} in [${this.name}] repeater.`);
             const res = await axios.get(
                 LOASTARK_BASE_URL + "/News/Notice/List"
             );
@@ -65,36 +72,51 @@ export default class LostarkNoticeRepeater implements Repeater {
                 if (this.sentNotices.includes(notice.title)) continue;
                 if (this.sentNotices.length > 30) this.sentNotices.shift();
                 this.sentNotices.push(notice.title);
-                Repository.write(keys.LOSTARK_SENT_NOTICES, this.sentNotices);
+                repository.write(keys.LOSTARK_SENT_NOTICES, this.sentNotices);
 
                 Logger.info(
                     `GET: ${notice.url} using axios in [${this.name}].`
                 );
                 const sub_res = await axios.get(notice.url);
                 const sub_$ = cheerio.load(sub_res.data);
-                const articleElements = sub_$(".fr-view").children().toArray();
+                const articleElements = sub_$(".fr-view *");
                 notice.imgUrl =
                     sub_$(".fr-view .editor__pc-only img")?.attr("src") ?? "";
                 notice.imgUrl = notice.imgUrl ? "http:" + notice.imgUrl : "";
 
                 for (const articleElement of articleElements) {
-                    if (articleElement.tagName === "hr") break;
-                    if (notice.article.length > 100) {
-                        notice.article += "...";
-                        break;
+                    let articleDatum = "";
+                    for (const articleChildElement of articleElement.childNodes) {
+                        if (articleChildElement.type === "text") {
+                            const parent =
+                                articleChildElement.parent as cheerio.Element;
+                            if (
+                                parent.name === "li" &&
+                                (parent.parent?.parent as cheerio.Element)
+                                    .name === "li"
+                            ) {
+                                articleDatum += "\t\t* ";
+                            } else if (parent.name === "li") {
+                                articleDatum += "\t* ";
+                            }
+                            articleDatum += articleChildElement.data.trim();
+                        }
                     }
 
-                    const articleDatum = sub_$(articleElement).text().trim();
-
-                    if (!articleDatum) continue;
-
-                    notice.article += articleDatum + "\n";
+                    if (
+                        articleDatum &&
+                        notice.article.length + articleDatum.length < 500
+                    )
+                        notice.article += articleDatum + "\n";
                 }
+
                 notices.push(notice);
             }
         } catch (error) {
-            Logger.error(`Failed to parse data in [${this.name}] repeater.`);
-            Logger.error(error);
+            Logger.error(
+                `Failed to parse data in [${this.name}] repeater.`,
+                error
+            );
         }
 
         return notices;
@@ -115,8 +137,6 @@ export default class LostarkNoticeRepeater implements Repeater {
                     )
                     .setFooter({ text: "로스트아크 소식" });
 
-                if (notice.article) console.log(notice.article);
-                console.log(!notice.article);
                 embed.addFields([
                     {
                         name: "내용",
@@ -127,13 +147,15 @@ export default class LostarkNoticeRepeater implements Repeater {
                 if (notice.imgUrl) embed.setImage(notice.imgUrl);
 
                 const noticeChannel =
-                    (await ClientManager.client.channels.fetch(
+                    (await clientManager.client.channels.fetch(
                         config.LIME_PARTY_NOTICE_CHANNEL
                     )) as TextChannel;
                 await noticeChannel.send({ embeds: [embed] });
             } catch (error) {
-                Logger.error(`Failed to execute [${this.name}] repeater.`);
-                Logger.error(error);
+                Logger.error(
+                    `Failed to execute [${this.name}] repeater.`,
+                    error
+                );
             }
         }
     }
