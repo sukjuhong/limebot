@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc --build",
     "clean": "rm -rf dist",
-    "start": "pm2 start node ./dist/app.js --name limebot NODE_ENV=production",
+    "start": "NODE_ENV=production pm2 start node ./dist/app.js --name limebot",
     "dev": "nodemon src/app.ts --ignore '*.json'"
   },
   "author": "",
