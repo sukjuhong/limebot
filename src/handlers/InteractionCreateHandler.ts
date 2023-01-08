@@ -40,9 +40,9 @@ export default class InteractionCreateHandler implements Handler {
                 await command.execute(interaction);
             } catch (error) {
                 Logger.error(
-                    `Occurred error while executing [${interaction.commandName}] command.`
+                    `Occurred error while executing [${interaction.commandName}] command.`,
+                    error
                 );
-                Logger.error(error);
                 await interaction.reply({
                     content: "커맨드 실행 도중 오류가 발생했습니다.",
                     ephemeral: true,
