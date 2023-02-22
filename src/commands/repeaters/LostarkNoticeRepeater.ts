@@ -33,7 +33,7 @@ export default class LostarkNoticeRepeater implements Repeater {
         this.name = "Lostark Notice";
         this.description = "로스트아크 공지를 확인하는 리피터";
         this.ms = 1000 * 60;
-        this.on = false;
+        this.on = true;
         this.timer = null;
         this.sentNotices =
             (repository.read(keys.LOSTARK_SENT_NOTICES) as Array<string>) ??
