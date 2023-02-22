@@ -45,7 +45,7 @@ export default class LostarkNoticeRepeater implements Repeater {
         const notices: Array<Notice> = [];
 
         try {
-            Logger.info(`GET: ${url} using axios in [${this.name}] repeater.`);
+            Logger.info(`GET: ${url} in [${this.name}] repeater.`);
             const res = await axios.get(
                 LOASTARK_BASE_URL + "/News/Notice/List"
             );
@@ -113,8 +113,10 @@ export default class LostarkNoticeRepeater implements Repeater {
                 notices.push(notice);
             }
         } catch (error) {
-            Logger.error(`Failed to parse data in [${this.name}] repeater.`);
-            Logger.error(error);
+            Logger.error(
+                `Failed to parse data in [${this.name}] repeater.`,
+                error
+            );
         }
 
         return notices;
@@ -150,8 +152,10 @@ export default class LostarkNoticeRepeater implements Repeater {
                     )) as TextChannel;
                 await noticeChannel.send({ embeds: [embed] });
             } catch (error) {
-                Logger.error(`Failed to execute [${this.name}] repeater.`);
-                Logger.error(error);
+                Logger.error(
+                    `Failed to execute [${this.name}] repeater.`,
+                    error
+                );
             }
         }
     }

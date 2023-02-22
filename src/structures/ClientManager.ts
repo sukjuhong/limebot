@@ -10,10 +10,10 @@ import {
 import * as path from "path";
 import * as fs from "fs";
 
-import Logger from "../utills/Logger";
 import { config } from "../utills/Config";
 import Command from "../interfaces/Command";
 import Repeater from "../interfaces/Repeater";
+import logger from "../utills/Logger";
 
 export default class ClientManager {
     client: Client;
@@ -26,7 +26,6 @@ export default class ClientManager {
         this.options = { intents: [] };
         this.commands = new Collection<string, Command>();
         this.repeaters = new Map<string, Repeater>();
-        this.client = this.createClient();
     }
 
     public static getInstance() {
@@ -34,10 +33,13 @@ export default class ClientManager {
     }
 
     public setOptions(options: ClientOptions) {
+        logger.info(`Set client options [${options.intents}]`);
         this.options = options;
     }
 
     public async init() {
+        logger.info("Initiating limebot by client manager...");
+        this.client = this.createClient();
         await this.login(config.DISCORD_TOKEN);
 
         await this.loadCommands();
@@ -47,33 +49,31 @@ export default class ClientManager {
     }
 
     private createClient(): Client {
-        Logger.info("Making Discord bot client...");
+        logger.info("Creating Discord bot client...");
         let ret: Client<boolean>;
         try {
             ret = new Client(this.options);
         } catch (error) {
-            Logger.error("Failed to make Discord bot client.");
-            Logger.error(error);
+            logger.error("Failed to create Discord bot client.", error);
         }
-        Logger.info("Successfully Making Discord bot client.");
+        logger.info("Successfully created Discord bot client.");
         return ret;
     }
 
     private async login(discordToken) {
-        Logger.info("Logging in Discord bot client...");
+        logger.info("Logging in the Discord bot client...");
         try {
             if (discordToken === "")
-                Logger.warn("Your Discord token is empty.");
+                logger.warn("Your Discord token is empty.");
             await this.client.login(discordToken);
         } catch (error) {
-            Logger.error("Failed to login Discord bot client.");
-            Logger.error(error);
+            logger.error("Failed to log in Discord bot client.", error);
         }
-        Logger.info("Successfully to login Discord bot client.");
+        logger.info("Successfully to log in Discord bot client.");
     }
 
     private async loadCommands() {
-        Logger.info("Loading commands...");
+        logger.info("Loading commands...");
         let loadedCommandsCount: number = 0;
         const commandsPath = path.join(__dirname, "../commands");
         const commandFiles = fs
@@ -82,26 +82,25 @@ export default class ClientManager {
 
         for (const file of commandFiles) {
             try {
-                Logger.info(`Loading [${file}] command...`);
+                logger.info(`Loading [${file}] command...`);
                 const filePath = path.join(commandsPath, file);
                 const command = new (await import(filePath)).default();
                 this.commands.set(command.data.name, command);
                 loadedCommandsCount++;
-                Logger.info(
+                logger.info(
                     `Successfully Loaded [${command.data.name}] command.`
                 );
             } catch (error) {
-                Logger.error(`Failed to load [${file}] command.`);
-                Logger.error(error);
+                logger.error(`Failed to load [${file}] command.`, error);
             }
         }
 
-        if (!loadedCommandsCount) Logger.warn("There is no commands.");
-        else Logger.info(`Successfully Loaded ${this.commands.size} commands.`);
+        if (!loadedCommandsCount) logger.warn("There is no commands.");
+        else logger.info(`Successfully Loaded ${this.commands.size} commands.`);
     }
 
     private async loadHandlers() {
-        Logger.info("Loading handlers...");
+        logger.info("Loading handlers...");
         let loadedHandlersCount: number = 0;
         const handlersPath = path.join(__dirname, "../handlers");
         const handlerFiles = fs
@@ -110,7 +109,7 @@ export default class ClientManager {
 
         for (const file of handlerFiles) {
             try {
-                Logger.info(`Loading [${file}] handler...`);
+                logger.info(`Loading [${file}] handler...`);
                 const filePath = path.join(handlersPath, file);
                 const handler = new (await import(filePath)).default();
                 if (handler.once) {
@@ -123,21 +122,20 @@ export default class ClientManager {
                     );
                 }
                 loadedHandlersCount++;
-                Logger.info(`Successfully loaded [${handler.name}] handlers.`);
+                logger.info(`Successfully loaded [${handler.name}] handlers.`);
             } catch (error) {
-                Logger.error(`Failed to load [${file}] handler.`);
-                Logger.error(error);
+                logger.error(`Failed to load [${file}] handler.`, error);
             }
         }
 
-        if (!loadedHandlersCount) Logger.warn("There is no handlers.");
+        if (!loadedHandlersCount) logger.warn("There is no handlers.");
         else
-            Logger.info(`Successfully loaded ${loadedHandlersCount} handlers.`);
+            logger.info(`Successfully loaded ${loadedHandlersCount} handlers.`);
     }
 
     private async registerCommands() {
         if (!this.commands.size) {
-            Logger.warn("There is no commands for registering.");
+            logger.warn("There is no commands for registering.");
             return;
         }
 
@@ -148,7 +146,7 @@ export default class ClientManager {
         });
 
         try {
-            Logger.info("Registering commands...");
+            logger.info("Registering commands...");
 
             await rest.put(
                 Routes.applicationGuildCommands(
@@ -160,14 +158,13 @@ export default class ClientManager {
                 }
             );
         } catch (error) {
-            Logger.error("Failed to register commands.");
-            Logger.error(error);
+            logger.error("Failed to register commands.", error);
         }
-        Logger.info(`Sucessfully registerd commands.`);
+        logger.info(`Sucessfully registerd commands.`);
     }
 
     private async loadRepeater() {
-        Logger.info("Loading repeater...");
+        logger.info("Loading repeater...");
         let loadedRepeaterCount: number = 0;
         const repeaterPath = path.join(__dirname, "../commands/repeaters");
         const repeaterFiles = fs
@@ -176,20 +173,20 @@ export default class ClientManager {
 
         for (const file of repeaterFiles) {
             try {
-                Logger.info(`Loading [${file}] repeater...`);
+                logger.info(`Loading [${file}] repeater...`);
                 const filePath = path.join(repeaterPath, file);
                 const repeater = new (await import(filePath)).default();
                 this.repeaters.set(repeater.name, repeater);
                 loadedRepeaterCount++;
-                Logger.info(`Successfully loaded [${repeater.name}] repeater.`);
+                logger.info(`Successfully loaded [${repeater.name}] repeater.`);
             } catch (error) {
-                Logger.error(`Failed to load [${file}] repeater.`);
-                Logger.error(error);
+                logger.error(`Failed to load [${file}] repeater.`);
+                logger.error(error);
             }
         }
 
-        if (!loadedRepeaterCount) Logger.warn("There is no repeaters.");
+        if (!loadedRepeaterCount) logger.warn("There is no repeaters.");
         else
-            Logger.info(`Successfully loaded ${loadedRepeaterCount} handlers.`);
+            logger.info(`Successfully loaded ${loadedRepeaterCount} handlers.`);
     }
 }

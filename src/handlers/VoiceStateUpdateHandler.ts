@@ -53,7 +53,7 @@ export default class VoiceStateUpdateHandler implements Handler {
                 parent: config.LIME_PARTY_CREATING_CHAANEL_CATEGOTY_ID,
             });
             Logger.info(
-                `Creating [${createdChannel.name}] temporary voice channel. `
+                `Created [${createdChannel.name}] temporary voice channel.`
             );
             this.createdChannelsMap.set(createdChannel.id, createdChannel);
             await newState.member.voice.setChannel(createdChannel);
