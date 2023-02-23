@@ -11,7 +11,7 @@ export type JsonType =
 
 export const keys = {
     LOSTARK_SENT_NOTICES: "lostark_sent_notices",
-    LOL_SENT_NOTICES: "lol_sent_notices"
+    LOL_SENT_NOTICES: "lol_sent_notices",
 };
 
 export default class Repository {
@@ -24,7 +24,7 @@ export default class Repository {
         try {
             fs.accessSync(this.dbPath, fs.constants.F_OK);
         } catch (error) {
-            Logger.warn(
+            Logger.info(
                 "There is no database json file. Automatically made a data.json."
             );
             fs.writeFileSync(this.dbPath, JSON.stringify({}));

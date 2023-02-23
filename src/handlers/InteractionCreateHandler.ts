@@ -26,13 +26,6 @@ export default class InteractionCreateHandler implements Handler {
         if (interaction.isChatInputCommand()) {
             const command = clientManager.commands.get(interaction.commandName);
 
-            if (!command) {
-                Logger.debug(
-                    `Cannot find the command [${interaction.commandName}] in commands Collection.`
-                );
-                return;
-            }
-
             try {
                 Logger.info(
                     `Executed [${interaction.commandName}] command by [${interaction.member.user.username}] user.`

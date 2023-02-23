@@ -32,18 +32,20 @@ export default class LolNoticeRepeater implements Repeater {
         this.ms = 1000 * 60;
         this.on = true;
         this.timer = null;
-        this.sentNotices = (repository.read(keys.LOL_SENT_NOTICES) as Array<string>) ?? new Array<string>();
+        this.sentNotices =
+            (repository.read(keys.LOL_SENT_NOTICES) as Array<string>) ??
+            new Array<string>();
     }
 
     private async parseNotices(): Promise<Array<Notice>> {
-        const baseUrl = "https://www.leagueoflegends.com"
+        const baseUrl = "https://www.leagueoflegends.com";
         const url = baseUrl + "/ko-kr/news/tags/patch-notes/";
         const notices: Array<Notice> = Array<Notice>();
 
         const res = await axios.get(url);
         const $ = cheerio.load(res.data);
         const noticeElements = $(".a-DAap").toArray();
-        
+
         for (const noticeElement of noticeElements.reverse()) {
             const noticeTitle = $(noticeElement).find("h2").text();
             const noticeUri = $(noticeElement).find("a").attr("href");
@@ -52,7 +54,7 @@ export default class LolNoticeRepeater implements Repeater {
             if (this.sentNotices.length > 30) this.sentNotices.shift();
             this.sentNotices.push(noticeTitle);
             repository.write(keys.LOL_SENT_NOTICES, this.sentNotices);
-            
+
             const subRes = await axios.get(baseUrl + noticeUri);
             const sub$ = cheerio.load(subRes.data);
             const noticeImgUrl = sub$(".skins").first().attr("href");
@@ -60,7 +62,7 @@ export default class LolNoticeRepeater implements Repeater {
             notices.push({
                 title: noticeTitle,
                 url: baseUrl + noticeUri,
-                imgUrl: noticeImgUrl
+                imgUrl: noticeImgUrl,
             });
         }
 
@@ -68,8 +70,8 @@ export default class LolNoticeRepeater implements Repeater {
     }
 
     async execute() {
-        Logger.info(`Executing [${this.name}] repeater...`);
         const notices = await this.parseNotices();
+
         for (const notice of notices) {
             try {
                 const embed = new EmbedBuilder()
@@ -77,13 +79,15 @@ export default class LolNoticeRepeater implements Repeater {
                     .setURL(notice.url)
                     .setDescription("패치 노트")
                     .setImage(notice.imgUrl)
-                    .setThumbnail("https://www.leagueoflegends.com/static/logo-1200-589b3ef693ce8a750fa4b4704f1e61f2.png")
+                    .setThumbnail(
+                        "https://www.leagueoflegends.com/static/logo-1200-589b3ef693ce8a750fa4b4704f1e61f2.png"
+                    )
                     .setFooter({ text: "리그오브레전드 패치노트" });
-                
+
                 const noticeChannel =
                     (await clientManager.client.channels.fetch(
                         config.LIME_PARTY_NOTICE_CHANNEL
-                        )) as TextChannel;
+                    )) as TextChannel;
                 await noticeChannel.send({ embeds: [embed] });
             } catch (error) {
                 Logger.error(
@@ -93,5 +97,4 @@ export default class LolNoticeRepeater implements Repeater {
             }
         }
     }
-
 }
