@@ -28,13 +28,18 @@ export default class ClientManager {
         return this.instance;
     }
 
-    public async init(options: ClientOptions) {
+    public init(options: ClientOptions) {
         this.client = new Client(options);
-        this.client.login(config.DISCORD_TOKEN);
-
-        this.loadCommands().then(() => this.registerCommands());
-        this.loadHandlers();
-        this.loadRepeater();
+        this.client
+            .login(config.DISCORD_TOKEN)
+            .then(() => {
+                this.loadCommands().then(() => this.registerCommands());
+                this.loadHandlers();
+                this.loadRepeater();
+            })
+            .catch((error) => {
+                logger.error(error);
+            });
     }
 
     private async loadCommands() {
@@ -55,7 +60,7 @@ export default class ClientManager {
             }
         }
 
-        if (!loadedCommandsCount) logger.warn("There is no commands.");
+        if (!loadedCommandsCount) logger.warn("There is no commands loaded.");
         else
             logger.info(`Successfully Loaded ${loadedCommandsCount} commands.`);
     }
@@ -87,7 +92,7 @@ export default class ClientManager {
             }
         }
 
-        if (!loadedHandlersCount) logger.warn("There is no handlers.");
+        if (!loadedHandlersCount) logger.warn("There is no handlers loaded.");
         else
             logger.info(`Successfully loaded ${loadedHandlersCount} handlers.`);
     }
@@ -112,7 +117,7 @@ export default class ClientManager {
             }
         }
 
-        if (!loadedRepeaterCount) logger.warn("There is no repeaters.");
+        if (!loadedRepeaterCount) logger.warn("There is no repeaters loaded.");
         else
             logger.info(`Successfully loaded ${loadedRepeaterCount} handlers.`);
     }
@@ -136,9 +141,9 @@ export default class ClientManager {
                     body,
                 }
             );
+            logger.info(`Successfully registerd commands.`);
         } catch (error) {
             logger.error("Failed to register commands.", error);
         }
-        logger.info(`Sucessfully registerd commands.`);
     }
 }
