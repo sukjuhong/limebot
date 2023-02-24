@@ -1,30 +1,26 @@
 import * as path from "path";
+import { text } from "stream/consumers";
 import { format, createLogger, transports } from "winston";
 import "winston-daily-rotate-file";
 
 const logDir = path.join(__dirname, "../../logs");
 
-const logLevel = {
-    fatal: 0,
-    error: 1,
-    warn: 2,
-    info: 3,
-};
-
 const logFormat = format.printf(
-    ({ level, message, label, timestamp, stack }) => {
-        return `${timestamp} [${label}] ${level}: ${message}`;
+    ({ service, timestamp, level, message, stack }) => {
+        const format = `${timestamp} [${service}] ${level}: ${message}`;
+        return stack ? format + "\n" + stack : format;
     }
 );
 
 const logger = createLogger({
-    levels: logLevel,
+    level: "info",
     format: format.combine(
         format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
-        format.label({ label: "LimeBot" }),
         format.errors({ stack: true }),
+        format.uncolorize(),
         logFormat
     ),
+    defaultMeta: { service: "Limebot" },
     transports: [
         new transports.DailyRotateFile({
             level: "info",
@@ -43,12 +39,11 @@ const logger = createLogger({
     ],
     exceptionHandlers: [
         new transports.DailyRotateFile({
-            level: "fatal",
+            level: "error",
             datePattern: "YYYY-MM-DD",
             dirname: logDir + "/exception",
             filename: `%DATE%.exception.log`,
             maxFiles: 30,
-            zippedArchive: true,
         }),
     ],
 });
@@ -56,7 +51,7 @@ const logger = createLogger({
 if (process.env.NODE_ENV !== "production") {
     logger.add(
         new transports.Console({
-            format: format.combine(format.colorize(), format.simple()),
+            format: format.combine(format.colorize(), logFormat),
         })
     );
 }

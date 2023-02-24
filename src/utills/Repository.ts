@@ -11,26 +11,23 @@ export type JsonType =
 
 export const keys = {
     LOSTARK_SENT_NOTICES: "lostark_sent_notices",
+    LOL_SENT_NOTICES: "lol_sent_notices",
 };
 
 export default class Repository {
     dbPath: string;
-    defalutData: JsonType;
     static instance = new Repository();
 
     private constructor() {
         this.dbPath = path.join(__dirname, "../../db.json");
-        this.defalutData = {
-            lostark_sent_notices: [],
-        };
 
         try {
             fs.accessSync(this.dbPath, fs.constants.F_OK);
         } catch (error) {
-            Logger.warn(
+            Logger.info(
                 "There is no database json file. Automatically made a data.json."
             );
-            fs.writeFileSync(this.dbPath, JSON.stringify(this.defalutData));
+            fs.writeFileSync(this.dbPath, JSON.stringify({}));
         }
     }
 
@@ -39,20 +36,14 @@ export default class Repository {
     }
 
     public read(key: string): JsonType {
-        let data;
-        try {
-            Logger.info("Reading database json file...");
-            const jsonData = fs.readFileSync(this.dbPath, "utf8");
-            data = JSON.parse(jsonData);
-        } catch (error) {
-            Logger.error("Failed to read database json file.");
-            Logger.error(error);
-        }
-        return data[key];
+        const jsonData = fs.readFileSync(this.dbPath, "utf8");
+        const data = JSON.parse(jsonData);
+
+        if (Object.keys(data).includes(key)) return data[key];
+        return undefined;
     }
 
     public write(key: string, newData: JsonType) {
-        Logger.info("Writing database json file...");
         try {
             const jsonData = fs.readFileSync(this.dbPath, "utf8");
             const data = JSON.parse(jsonData);
