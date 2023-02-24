@@ -6,18 +6,22 @@ import { config } from "../utills/Config";
 import Command from "../interfaces/Command";
 import Repeater from "../interfaces/Repeater";
 import logger from "../utills/Logger";
+import Handler from "../interfaces/Handler";
 
 export default class ClientManager {
     client: Client;
+    options: ClientOptions;
     commands: Map<string, Command>;
     repeaters: Map<string, Repeater>;
-    options: ClientOptions;
+    handlers: Map<string, Handler>;
+
     static instance = new ClientManager();
 
     private constructor() {
         this.options = { intents: [] };
         this.commands = new Collection<string, Command>();
         this.repeaters = new Map<string, Repeater>();
+        this.handlers = new Map<string, Handler>();
     }
 
     public static getInstance() {
@@ -43,7 +47,7 @@ export default class ClientManager {
         for (const file of commandFiles) {
             try {
                 const filePath = path.join(commandsPath, file);
-                const command = new (await import(filePath)).default();
+                const command: Command = new (await import(filePath)).default();
                 this.commands.set(command.data.name, command);
                 loadedCommandsCount++;
             } catch (error) {
@@ -66,7 +70,8 @@ export default class ClientManager {
         for (const file of handlerFiles) {
             try {
                 const filePath = path.join(handlersPath, file);
-                const handler = new (await import(filePath)).default();
+                const handler: Handler = new (await import(filePath)).default();
+                this.handlers.set(handler.name, handler);
                 if (handler.once) {
                     this.client.once(handler.name, (...args) =>
                         handler.execute(...args)
@@ -97,7 +102,9 @@ export default class ClientManager {
         for (const file of repeaterFiles) {
             try {
                 const filePath = path.join(repeaterPath, file);
-                const repeater = new (await import(filePath)).default();
+                const repeater: Repeater = new (
+                    await import(filePath)
+                ).default();
                 this.repeaters.set(repeater.name, repeater);
                 loadedRepeaterCount++;
             } catch (error) {

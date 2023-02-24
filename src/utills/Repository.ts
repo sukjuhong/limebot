@@ -36,7 +36,6 @@ export default class Repository {
     }
 
     public read(key: string): JsonType {
-        Logger.info("Reading database json file...");
         const jsonData = fs.readFileSync(this.dbPath, "utf8");
         const data = JSON.parse(jsonData);
 
@@ -45,7 +44,6 @@ export default class Repository {
     }
 
     public write(key: string, newData: JsonType) {
-        Logger.info("Writing database json file...");
         try {
             const jsonData = fs.readFileSync(this.dbPath, "utf8");
             const data = JSON.parse(jsonData);
