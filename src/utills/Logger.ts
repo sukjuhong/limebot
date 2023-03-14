@@ -1,5 +1,4 @@
 import * as path from "path";
-import { text } from "stream/consumers";
 import { format, createLogger, transports } from "winston";
 import "winston-daily-rotate-file";
 

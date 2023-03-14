@@ -4,16 +4,13 @@ import { EmbedBuilder, TextChannel } from "discord.js";
 
 import Repeater from "../../interfaces/Repeater";
 import ClientManager from "../../structures/ClientManager";
-import { config } from "../../utills/Config";
-import Logger from "../../utills/Logger";
+import { DISCORD_NOTICE_CHANNEL_ID } from "../../utills/Config";
+import logger from "../../utills/Logger";
 import Repository, { keys } from "../../utills/Repository";
-
-const LOASTARK_BASE_URL = "https://lostark.game.onstove.com";
 
 interface Notice {
     title: string;
     category: string;
-    article: string;
     url: string;
     imgUrl: string;
 }
@@ -40,123 +37,67 @@ export default class LostarkNoticeRepeater implements Repeater {
             new Array<string>();
     }
 
-    private async parseUnsentNotices(): Promise<Array<Notice>> {
-        const url = LOASTARK_BASE_URL + "/News/Notice/List";
-        const notices: Array<Notice> = [];
+    private async parseNotices(): Promise<Array<Notice>> {
+        const baseUrl = "https://lostark.game.onstove.com";
+        const url = baseUrl + "/News/Notice/List";
+        const notices = new Array<Notice>();
 
-        try {
-            Logger.info(`GET: ${url} in [${this.name}] repeater.`);
-            const res = await axios.get(
-                LOASTARK_BASE_URL + "/News/Notice/List"
-            );
-            const $ = cheerio.load(res.data);
-            const noticeElements = $(
-                ".list li:not(.list__item--notice) a"
-            ).toArray();
+        const res = await axios.get(baseUrl + "/News/Notice/List");
+        const $ = cheerio.load(res.data);
+        const noticeElements = $(
+            ".list li:not(.list__item--notice) a"
+        ).toArray();
 
-            for (const noticeElement of noticeElements.reverse()) {
-                const notice: Notice = {
-                    title: "",
-                    category: "",
-                    article: "",
-                    url: "",
-                    imgUrl: "",
-                };
+        for (const noticeElement of noticeElements.reverse()) {
+            const title = $(noticeElement).find(".list__title").text();
+            const category = $(noticeElement)
+                .find(".list__category .icon")
+                .text();
+            const url = baseUrl + noticeElement.attribs.href;
 
-                notice.title = $(noticeElement).find(".list__title").text();
-                notice.category = $(noticeElement)
-                    .find(".list__category .icon")
-                    .text();
-                notice.url = LOASTARK_BASE_URL + noticeElement.attribs.href;
+            const sub_res = await axios.get(url);
+            const sub_$ = cheerio.load(sub_res.data);
+            let imgUrl =
+                sub_$(".fr-view .editor__pc-only img")?.attr("src");
+            imgUrl = imgUrl ? "http:" + imgUrl : "";
 
-                if (this.sentNotices.includes(notice.title)) continue;
-                if (this.sentNotices.length > 30) this.sentNotices.shift();
-                this.sentNotices.push(notice.title);
-                repository.write(keys.LOSTARK_SENT_NOTICES, this.sentNotices);
-
-                Logger.info(
-                    `GET: ${notice.url} using axios in [${this.name}].`
-                );
-                const sub_res = await axios.get(notice.url);
-                const sub_$ = cheerio.load(sub_res.data);
-                const articleElements = sub_$(".fr-view *");
-                notice.imgUrl =
-                    sub_$(".fr-view .editor__pc-only img")?.attr("src") ?? "";
-                notice.imgUrl = notice.imgUrl ? "http:" + notice.imgUrl : "";
-
-                for (const articleElement of articleElements) {
-                    let articleDatum = "";
-                    for (const articleChildElement of articleElement.childNodes) {
-                        if (articleChildElement.type === "text") {
-                            const parent =
-                                articleChildElement.parent as cheerio.Element;
-                            if (
-                                parent.name === "li" &&
-                                (parent.parent?.parent as cheerio.Element)
-                                    .name === "li"
-                            ) {
-                                articleDatum += "\t\t* ";
-                            } else if (parent.name === "li") {
-                                articleDatum += "\t* ";
-                            }
-                            articleDatum += articleChildElement.data.trim();
-                        }
-                    }
-
-                    if (
-                        articleDatum &&
-                        notice.article.length + articleDatum.length < 500
-                    )
-                        notice.article += articleDatum + "\n";
-                }
-
-                notices.push(notice);
-            }
-        } catch (error) {
-            Logger.error(
-                `Failed to parse data in [${this.name}] repeater.`,
-                error
-            );
+            notices.push({
+                title,
+                category,
+                url,
+                imgUrl
+            });
         }
 
         return notices;
     }
 
     async execute() {
-        Logger.info(`Executing [${this.name}] repeater...`);
-        const unsentNotices = await this.parseUnsentNotices();
+        logger.info(`Executing [${this.name}] repeater...`);
+        const notices = await this.parseNotices();
 
-        for (const notice of unsentNotices) {
-            try {
-                const embed = new EmbedBuilder()
-                    .setTitle(notice.title)
-                    .setFields([{ name: "카테고리", value: notice.category }])
-                    .setURL(notice.url)
-                    .setThumbnail(
-                        "https://cdn-lostark.game.onstove.com/2018/obt/assets/images/pc/layout/logo_o.png?98a1a7c82ce9d71f950ad4cde8e4c9b0"
-                    )
-                    .setFooter({ text: "로스트아크 소식" });
+        for (const notice of notices) {
+            if (this.sentNotices.includes(notice.title)) continue;
 
-                embed.addFields([
-                    {
-                        name: "내용",
-                        value: `\`\`\`${notice.article}\`\`\``,
-                    },
-                ]);
+            if (this.sentNotices.length > 30) this.sentNotices.shift();
+            this.sentNotices.push(notice.title);
+            repository.write(keys.LOSTARK_SENT_NOTICES, this.sentNotices);
 
-                if (notice.imgUrl) embed.setImage(notice.imgUrl);
+            const embed = new EmbedBuilder()
+                .setTitle(notice.title)
+                .setDescription(notice.category)
+                .setURL(notice.url)
+                .setThumbnail(
+                    "https://cdn-lostark.game.onstove.com/2018/obt/assets/images/pc/layout/logo_o.png?98a1a7c82ce9d71f950ad4cde8e4c9b0"
+                )
+                .setFooter({ text: "로스트아크 소식" });
+            if (notice.imgUrl) embed.setImage(notice.imgUrl);
 
-                const noticeChannel =
-                    (await clientManager.client.channels.fetch(
-                        config.LIME_PARTY_NOTICE_CHANNEL
-                    )) as TextChannel;
-                await noticeChannel.send({ embeds: [embed] });
-            } catch (error) {
-                Logger.error(
-                    `Failed to execute [${this.name}] repeater.`,
-                    error
-                );
-            }
+            const noticeChannel = await clientManager.client.channels.fetch(
+                DISCORD_NOTICE_CHANNEL_ID
+            );
+            if (noticeChannel instanceof TextChannel)
+                noticeChannel.send({ embeds: [embed] });
         }
     }
 }

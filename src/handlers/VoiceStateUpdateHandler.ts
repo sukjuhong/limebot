@@ -7,9 +7,11 @@ import {
 } from "discord.js";
 
 import Handler from "../interfaces/Handler";
-import Logger from "../utills/Logger";
+import { DISCORD_CREATING_CHANNEL_ID, DISCORD_CREATING_CHANNEL_CATEGORY_ID } from "../utills/Config";
 import ClientManager from "../structures/ClientManager";
-import { config } from "../utills/Config";
+import logger from "../utills/Logger";
+
+const clientManager = ClientManager.getInstance();
 
 export default class VoiceStateUpdateHandler implements Handler {
     name: string;
@@ -21,18 +23,27 @@ export default class VoiceStateUpdateHandler implements Handler {
     constructor() {
         this.name = Events.VoiceStateUpdate;
         this.once = false;
-        this.createdChannelsMap = new Map<string, VoiceBasedChannel>();
+        this.creatingChannel = null;
+        this.createdChannelsMap = new Map<string, VoiceChannel>();
     }
 
     public async execute(oldState: VoiceState, newState: VoiceState) {
-        if (!this.creatingChannel) return;
+        if (!this.creatingChannel) {
+            const channel = await clientManager.client.channels.fetch(DISCORD_CREATING_CHANNEL_ID);
+            if (channel instanceof VoiceChannel)
+                this.creatingChannel = channel;
+            else {
+                logger.warn("creatingChannel is not VoiceChannel.")
+                return;
+            }
+        }
 
         if (
             oldState.channelId !== this.creatingChannel.id &&
             this.createdChannelsMap.has(oldState.channelId) &&
             !oldState.channel.members.size
         ) {
-            Logger.info(
+            logger.info(
                 `Deleted [${oldState.channel.name}] empty voice channel created by creating channel.`
             );
             this.createdChannelsMap.delete(oldState.channelId);
@@ -45,9 +56,9 @@ export default class VoiceStateUpdateHandler implements Handler {
                     oldState.member.nickname || oldState.member.displayName
                 } 채널`,
                 type: ChannelType.GuildVoice,
-                parent: config.LIME_PARTY_CREATING_CHAANEL_CATEGOTY_ID,
+                parent: DISCORD_CREATING_CHANNEL_CATEGORY_ID,
             });
-            Logger.info(
+            logger.info(
                 `Created [${createdChannel.name}] temporary voice channel.`
             );
             this.createdChannelsMap.set(createdChannel.id, createdChannel);

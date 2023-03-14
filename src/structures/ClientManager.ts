@@ -2,7 +2,7 @@ import { Client, ClientOptions, Collection, Routes, REST } from "discord.js";
 import * as path from "path";
 import * as fs from "fs";
 
-import { config } from "../utills/Config";
+import { DISCORD_TOKEN, DISCORD_CLIENT_ID, DISCORD_GUILD_ID } from "../utills/Config";
 import Command from "../interfaces/Command";
 import Repeater from "../interfaces/Repeater";
 import logger from "../utills/Logger";
@@ -31,7 +31,7 @@ export default class ClientManager {
     public init(options: ClientOptions) {
         this.client = new Client(options);
         this.client
-            .login(config.DISCORD_TOKEN)
+            .login(DISCORD_TOKEN)
             .then(() => {
                 this.loadCommands().then(() => this.registerCommands());
                 this.loadHandlers();
@@ -130,7 +130,7 @@ export default class ClientManager {
     private async registerCommands() {
         if (!this.commands.size) return;
 
-        const rest = new REST({ version: "10" }).setToken(config.DISCORD_TOKEN);
+        const rest = new REST({ version: "10" }).setToken(DISCORD_TOKEN);
         const body = [];
         this.commands.forEach((command) => {
             body.push(command.data.toJSON());
@@ -139,8 +139,8 @@ export default class ClientManager {
         try {
             await rest.put(
                 Routes.applicationGuildCommands(
-                    config.DISCORD_CLIENT_ID,
-                    config.LIME_PARTY_GUILD_ID
+                    DISCORD_CLIENT_ID,
+                    DISCORD_GUILD_ID
                 ),
                 {
                     body,
