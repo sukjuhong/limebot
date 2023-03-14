@@ -23,23 +23,19 @@ export default class VoiceStateUpdateHandler implements Handler {
     constructor() {
         this.name = Events.VoiceStateUpdate;
         this.once = false;
-        this.creatingChannel = this.getCreatingChannel();
-        this.createdChannelsMap = new Map<string, VoiceBasedChannel>();
-    }
-
-    private getCreatingChannel(): VoiceChannel {
-        const creatingChannel = clientManager.client.channels.fetch(DISCORD_CREATING_CHANNEL_ID);
-        if (creatingChannel instanceof VoiceChannel) 
-            return creatingChannel;
-        else
-            logger.warn("Getting creatingChannel is failed.");
-            return null;
+        this.creatingChannel = null;
+        this.createdChannelsMap = new Map<string, VoiceChannel>();
     }
 
     public async execute(oldState: VoiceState, newState: VoiceState) {
         if (!this.creatingChannel) {
-            logger.warn("creatingChannel is null.");
-            return;
+            const channel = await clientManager.client.channels.fetch(DISCORD_CREATING_CHANNEL_ID);
+            if (channel instanceof VoiceChannel)
+                this.creatingChannel = channel;
+            else {
+                logger.warn("creatingChannel is not VoiceChannel.")
+                return;
+            }
         }
 
         if (
