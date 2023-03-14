@@ -4,8 +4,8 @@ import { EmbedBuilder, TextChannel } from "discord.js";
 
 import Repeater from "../../interfaces/Repeater";
 import ClientManager from "../../structures/ClientManager";
-import { config } from "../../utills/Config";
-import Logger from "../../utills/Logger";
+import { DISCORD_NOTICE_CHANNEL } from "../../utills/Config";
+import logger from "../../utills/Logger";
 import Repository, { keys } from "../../utills/Repository";
 
 const LOASTARK_BASE_URL = "https://lostark.game.onstove.com";
@@ -45,7 +45,7 @@ export default class LostarkNoticeRepeater implements Repeater {
         const notices: Array<Notice> = [];
 
         try {
-            Logger.info(`GET: ${url} in [${this.name}] repeater.`);
+            logger.info(`GET: ${url} in [${this.name}] repeater.`);
             const res = await axios.get(
                 LOASTARK_BASE_URL + "/News/Notice/List"
             );
@@ -74,7 +74,7 @@ export default class LostarkNoticeRepeater implements Repeater {
                 this.sentNotices.push(notice.title);
                 repository.write(keys.LOSTARK_SENT_NOTICES, this.sentNotices);
 
-                Logger.info(
+                logger.info(
                     `GET: ${notice.url} using axios in [${this.name}].`
                 );
                 const sub_res = await axios.get(notice.url);
@@ -113,7 +113,7 @@ export default class LostarkNoticeRepeater implements Repeater {
                 notices.push(notice);
             }
         } catch (error) {
-            Logger.error(
+            logger.error(
                 `Failed to parse data in [${this.name}] repeater.`,
                 error
             );
@@ -123,40 +123,33 @@ export default class LostarkNoticeRepeater implements Repeater {
     }
 
     async execute() {
-        Logger.info(`Executing [${this.name}] repeater...`);
+        logger.info(`Executing [${this.name}] repeater...`);
         const unsentNotices = await this.parseUnsentNotices();
 
         for (const notice of unsentNotices) {
-            try {
-                const embed = new EmbedBuilder()
-                    .setTitle(notice.title)
-                    .setFields([{ name: "카테고리", value: notice.category }])
-                    .setURL(notice.url)
-                    .setThumbnail(
-                        "https://cdn-lostark.game.onstove.com/2018/obt/assets/images/pc/layout/logo_o.png?98a1a7c82ce9d71f950ad4cde8e4c9b0"
-                    )
-                    .setFooter({ text: "로스트아크 소식" });
+            const embed = new EmbedBuilder()
+                .setTitle(notice.title)
+                .setFields([{ name: "카테고리", value: notice.category }])
+                .setURL(notice.url)
+                .setThumbnail(
+                    "https://cdn-lostark.game.onstove.com/2018/obt/assets/images/pc/layout/logo_o.png?98a1a7c82ce9d71f950ad4cde8e4c9b0"
+                )
+                .setFooter({ text: "로스트아크 소식" });
 
-                embed.addFields([
-                    {
-                        name: "내용",
-                        value: `\`\`\`${notice.article}\`\`\``,
-                    },
-                ]);
+            embed.addFields([
+                {
+                    name: "내용",
+                    value: `\`\`\`${notice.article}\`\`\``,
+                },
+            ]);
 
-                if (notice.imgUrl) embed.setImage(notice.imgUrl);
+            if (notice.imgUrl) embed.setImage(notice.imgUrl);
 
-                const noticeChannel =
-                    (await clientManager.client.channels.fetch(
-                        config.LIME_PARTY_NOTICE_CHANNEL
-                    )) as TextChannel;
+            const noticeChannel = clientManager.client.channels.fetch(DISCORD_NOTICE_CHANNEL);
+            if (noticeChannel instanceof TextChannel)
                 await noticeChannel.send({ embeds: [embed] });
-            } catch (error) {
-                Logger.error(
-                    `Failed to execute [${this.name}] repeater.`,
-                    error
-                );
-            }
+            else
+                new Error("noticeChannel is not TextChannel.")
         }
     }
 }

@@ -10,7 +10,6 @@ import {
     EmbedBuilder,
     Events,
 } from "discord.js";
-import { Logger } from "winston";
 import Command from "../interfaces/Command";
 import Repeater from "../interfaces/Repeater";
 import ClientManager from "../structures/ClientManager";
