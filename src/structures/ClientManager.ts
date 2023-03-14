@@ -110,6 +110,11 @@ export default class ClientManager {
                 const repeater: Repeater = new (
                     await import(filePath)
                 ).default();
+                if (repeater.on) {
+                    repeater.timer = setInterval(() => {
+                        repeater.execute();
+                    }, repeater.ms);
+                }
                 this.repeaters.set(repeater.name, repeater);
                 loadedRepeaterCount++;
             } catch (error) {

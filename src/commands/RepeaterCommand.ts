@@ -105,11 +105,10 @@ export default class RepeaterCommand implements Command {
                         interaction.customId === "repeater_on_button" &&
                         interaction.user.id === interaction.user.id
                     ) {
-                        const timer = setInterval(
+                        repeater.timer = setInterval(
                             () => repeater.execute(),
                             repeater.ms
                         );
-                        repeater.timer = timer;
                         repeater.on = true;
                         logger.info(
                             `Turned on [${repeater.name}] repeater by [${interaction.user.username}]`
