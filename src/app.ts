@@ -1,7 +1,8 @@
-import ClientManager from "./structures/ClientManager";
-import { GatewayIntentBits } from "discord.js";
+import { Client, GatewayIntentBits } from "discord.js";
+import { ClientManager } from "./core/ClientManager";
 
-const clientManager = ClientManager.getInstance();
-clientManager.init({
+export const clientManager = new ClientManager(
+  new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
-});
+  })
+);

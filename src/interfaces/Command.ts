@@ -1,7 +1,15 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import {
+  ChatInputCommandInteraction,
+  RESTPostAPIChatInputApplicationCommandsJSONBody,
+  SlashCommandBuilder,
+} from "discord.js";
 
 export default interface Command {
-    data: Partial<SlashCommandBuilder>;
+  data: {
+    name: String;
+    description: String;
+    toJSON(): RESTPostAPIChatInputApplicationCommandsJSONBody;
+  } & Partial<SlashCommandBuilder>;
 
-    execute(interaction: ChatInputCommandInteraction): void | Promise<void>;
+  execute(interaction: ChatInputCommandInteraction): Promise<void>;
 }

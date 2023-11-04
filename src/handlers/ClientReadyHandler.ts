@@ -1,18 +1,13 @@
-import { Client, Events } from "discord.js";
+import { Client, ClientEvents, Events } from "discord.js";
 
 import Handler from "../interfaces/Handler";
-import Logger from "../utills/Logger";
+import { logger } from "../utils/logger";
 
 export default class ClientReadyHandler implements Handler {
-    name: string;
-    once: boolean;
+  name: keyof ClientEvents = Events.ClientReady;
+  once: Boolean = true;
 
-    constructor() {
-        this.name = Events.ClientReady;
-        this.once = true;
-    }
-
-    public execute(client: Client): void {
-        Logger.info(`Logged in as ${client.user.tag}`);
-    }
+  public execute(client: Client): void {
+    logger.info(`Logged in as ${client.user.tag}`);
+  }
 }

@@ -1,6 +1,8 @@
-export default interface Handler {
-    name: string;
-    once: boolean;
+import { ClientEvents } from "discord.js";
 
-    execute(...args: any[]): void | Promise<void>;
+export default interface Handler {
+  name: keyof ClientEvents;
+  once: Boolean;
+
+  execute(...args: any[]): void | Promise<void>;
 }

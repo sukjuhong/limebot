@@ -1,10 +1,8 @@
 {
     "compilerOptions": {
-        "target": "ES6",
+        "target": "ES2020",
         "module": "CommonJS",
         "outDir": "./dist",
-        "moduleResolution": "Node",
-        "types": ["node"],
     },
     "include": ["./src/**/*.ts"],
     "exclude": ["node_modules"],
